@@ -1,0 +1,145 @@
+<html>
+<head>
+  <title></title>
+  <script src='https://ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js'></script>
+   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0/angular-messages.js"></script>
+  <script type='text/javascript'>
+    var myApp = angular.module('myApp', ['ngRoute','ngMessages']);
+
+    myApp.config(function ($routeProvider) {
+          $routeProvider
+            .when('/',{
+                templateUrl: 'partials/Customers.html'
+            })
+            .when('/orders',{
+                templateUrl: 'partials/Orders.html'
+            })
+            .otherwise({
+              redirectTo: '/'
+            });
+        });
+
+    myApp.factory('customerFactory', function ($http){
+    // The factory is nothing more than a function that returns an object
+    var customers = []
+    var factory = {};
+    // Add a getStudents key to the factory object with a value of a function.
+    factory.index = function(callback) {
+    // Where do we get access to $http?
+    $http.get('/customers').success(function(output) {
+      customers = output;
+      callback(customers);
+    })
+    }
+      // note the use of callbacks!
+      // Restful syntax: create = add one to that object
+      factory.create = function(info, callback) {
+        $http.post('/customers',info).success(function() {
+          console.log('test');
+          callback();
+        })
+        // callback(customers);
+
+    }
+      factory.destroy =function (id, callback) {
+        $http.delete('/customers/'+id).success(function() {
+          console.log('test2');
+          callback();
+        })
+      }
+      return factory;
+    });
+    myApp.factory('OrderFactory', function ($http){
+    // The factory is nothing more than a function that returns an object
+    var products = [
+      {name:'Nike Shoe'},
+      {name:'Black Belt'},
+      {name:'Ice Cream'},
+      {name: 'Candy'}];
+      var orders = [];
+    var factory = {};
+    // Add a getStudents key to the factory object with a value of a function.
+    factory.getProducts = function (callback){
+        // Pass the students to a callback to be used by whoever calls the method
+        callback(products);
+    }
+
+
+    factory.getOrders = function (callback){
+      $http.get('/orders').success(function(output) {
+        orders = output;
+        callback(orders);
+      })
+      }
+    factory.createOrder= function (order,callback) {
+      console.log(order);
+      $http.post('/orders',order).success(function() {
+        callback();
+      })
+      // callback(customers);
+
+  }
+    return factory;
+    });
+
+    myApp.controller('CustomersController', function ($scope, customerFactory){
+
+        $scope.customers = [];
+        customerFactory.index(function(data){
+          $scope.customers = data
+        })
+        $scope.AddnewCustomer= function () {
+          customerFactory.create($scope.newCustomer,function () {
+            customerFactory.index(function(data){
+              $scope.customers = data
+            })
+          });
+          $scope.newCustomer ={};
+        }
+        $scope.DeleteCustomer = function (id) {
+          customerFactory.destroy(id, function () {
+            customerFactory.index(function(data){
+              $scope.customers = data
+            })
+          });
+        }
+      })
+
+
+        myApp.controller('OrderController', function ($scope, customerFactory, OrderFactory){
+          // we don't need a factory for this demo, it wouldn't make a difference if we did.
+            $scope.customers = [];
+            customerFactory.index(function(data){
+              $scope.customers = data
+            })
+
+            $scope.products = [];
+            OrderFactory.getProducts(function(data){
+              $scope.products = data
+            })
+
+            $scope.orders= [];
+            OrderFactory.getOrders(function (data) {
+              $scope.orders = data
+            })
+            $scope.newOrder = function () {
+              OrderFactory.createOrder($scope.order, function () {
+                OrderFactory.getOrders(function (data) {
+                  $scope.orders = data
+                })
+              });
+              $scope.order = {}
+            }
+
+
+          })
+  </script>
+</head>
+<body ng-app='myApp'>
+   <a href="#/">Customers</a> | <a href="#/orders">Orders</a>
+    <div ng-view=''>
+
+    </div>
+</body>
+</html>
